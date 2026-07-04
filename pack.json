@@ -1,0 +1,5 @@
+{
+  "name": "knowledge-tools",
+  "version": "0.1.0",
+  "tools": ["knowledge"]
+}

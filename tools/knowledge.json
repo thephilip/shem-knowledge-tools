@@ -1,0 +1,45 @@
+{
+  "id": "knowledge",
+  "language": "python",
+  "description": "Local-first semantic memory: index documents, search semantically, list/delete collections. All data stays local.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["index", "search", "list", "delete"],
+        "description": "Action to perform"
+      },
+      "text": {
+        "type": "string",
+        "description": "Text content to index (required for index action)"
+      },
+      "source": {
+        "type": "string",
+        "description": "Source label for the indexed content (e.g., filename, URL)"
+      },
+      "query": {
+        "type": "string",
+        "description": "Search query (required for search action)"
+      },
+      "collection": {
+        "type": "string",
+        "description": "Collection/index name (default: 'default')"
+      },
+      "n": {
+        "type": "integer",
+        "description": "Number of search results to return (default: 5)"
+      },
+      "threshold": {
+        "type": "number",
+        "description": "Minimum similarity score (0-1) for search results (default: 0.0)"
+      },
+      "name": {
+        "type": "string",
+        "description": "Collection name to delete (required for delete action)"
+      }
+    },
+    "required": ["action"]
+  },
+  "test_source": "from tool import run\n\ndef test_missing_action():\n    result = run({})\n    assert 'error' in result\n\ndef test_unknown_action():\n    result = run({'action': 'foobar'})\n    assert 'error' in result\n\ndef test_index_no_text():\n    result = run({'action': 'index'})\n    assert 'error' in result\n\ndef test_search_no_query():\n    result = run({'action': 'search'})\n    assert 'error' in result\n\ndef test_delete_no_name():\n    result = run({'action': 'delete'})\n    assert 'error' in result\n\ndef test_list():\n    result = run({'action': 'list'})\n    assert 'error' not in result\n    assert 'collections' in result\n\ndef test_index_and_search():\n    run({'action': 'index', 'text': 'The capital of France is Paris', 'source': 'test_geo'})\n    result = run({'action': 'search', 'query': 'French capital'})\n    assert 'results' in result\n    assert len(result['results']) > 0\n"
+}
