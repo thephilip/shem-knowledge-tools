@@ -1,7 +1,16 @@
 {
   "id": "knowledge",
   "language": "python",
-  "description": "Local-first semantic memory: index documents, search semantically, list/delete collections. All data stays local.",
+  "description": "Local-first semantic memory: index documents, search semantically, list/delete collections. All data stays local. Search output is sanitized against prompt injection.",
+  "sandbox": {
+    "network": true
+  },
+  "actions": [
+    {"name": "index",  "risk": "write"},
+    {"name": "search", "risk": "read"},
+    {"name": "list",   "risk": "read"},
+    {"name": "delete", "risk": "write"}
+  ],
   "schema": {
     "type": "object",
     "properties": {
@@ -16,7 +25,7 @@
       },
       "source": {
         "type": "string",
-        "description": "Source label for the indexed content (e.g., filename, URL)"
+        "description": "Source label for the indexed content (e.g., filename, URL). Also used as filter on search (only return passages from this source)."
       },
       "query": {
         "type": "string",
@@ -41,5 +50,5 @@
     },
     "required": ["action"]
   },
-  "test_source": "from tool import run\n\ndef test_missing_action():\n    result = run({})\n    assert 'error' in result\n\ndef test_unknown_action():\n    result = run({'action': 'foobar'})\n    assert 'error' in result\n\ndef test_index_no_text():\n    result = run({'action': 'index'})\n    assert 'error' in result\n\ndef test_search_no_query():\n    result = run({'action': 'search'})\n    assert 'error' in result\n\ndef test_delete_no_name():\n    result = run({'action': 'delete'})\n    assert 'error' in result\n\ndef test_list():\n    result = run({'action': 'list'})\n    assert 'error' not in result\n    assert 'collections' in result\n\ndef test_index_and_search():\n    run({'action': 'index', 'text': 'The capital of France is Paris', 'source': 'test_geo'})\n    result = run({'action': 'search', 'query': 'French capital'})\n    assert 'results' in result\n    assert len(result['results']) > 0\n"
+  "test_source": "from tool import run\n\ndef test_missing_action():\n    result = run({})\n    assert 'error' in result\n\ndef test_unknown_action():\n    result = run({'action': 'foobar'})\n    assert 'error' in result\n\ndef test_index_no_text():\n    result = run({'action': 'index'})\n    assert 'error' in result\n\ndef test_search_no_query():\n    result = run({'action': 'search'})\n    assert 'error' in result\n\ndef test_delete_no_name():\n    result = run({'action': 'delete'})\n    assert 'error' in result\n\ndef test_list():\n    result = run({'action': 'list'})\n    assert 'error' not in result\n    assert 'collections' in result\n\ndef test_index_and_search():\n    run({'action': 'index', 'text': 'The capital of France is Paris', 'source': 'test_geo'})\n    result = run({'action': 'search', 'query': 'French capital'})\n    assert 'results' in result\n    assert len(result['results']) > 0\n\ndef test_search_source_filter():\n    run({'action': 'index', 'text': 'Python is a programming language', 'source': 'wiki_py'})\n    run({'action': 'index', 'text': 'Python is also a snake', 'source': 'wiki_py'})\n    run({'action': 'index', 'text': 'Erlang runs on the BEAM', 'source': 'wiki_erlang'})\n    result = run({'action': 'search', 'query': 'programming language', 'source': 'wiki_erlang'})\n    for r in result.get('results', []):\n        assert r.get('source') == 'wiki_erlang'\n    # cleanup\n    run({'action': 'delete', 'name': 'default'})\n\ndef test_sanitize_untagged():\n    result = run({'action': 'search', 'query': 'French capital'})\n    assert 'error' not in result\n"
 }
